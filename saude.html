@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  
+  <!-- PWA Meta Tags -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Jo&Beta Saúde">
+  <meta name="theme-color" content="#185fa5">
+  <meta name="description" content="Monitoramento de saúde familiar - Jo&Beta">
+  
+  <!-- Manifest e Ícones -->
+  <link rel="manifest" href="/beta/manifest.json">
+  <link rel="apple-touch-icon" href="/beta/J&B.png">
+  
+  <title>JO&Beta - Controle de Saúde Familiar</title>
+  
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #ffffff; --bg-secondary: #f5f5f4; --bg-tertiary: #eeede9;
+      --bg-info: #e6f1fb; --bg-success: #eaf3de; --bg-danger: #fcebeb; --bg-warning: #faeeda;
+      --text: #1a1a18; --text-secondary: #6b6b67; --text-tertiary: #9e9e9a;
+      --text-info: #185fa5; --text-success: #3b6d11; --text-danger: #a32d2d; --text-warning: #854f0b;
+      --border: rgba(0,0,0,0.12); --border-md: rgba(0,0,0,0.22);
+      --radius-md: 8px; --radius-lg: 12px;
+      --font: system-ui, -apple-system, 'Segoe UI', sans-serif;
+    }
+    body { font-family: var(--font); background: var(--bg-tertiary); color: var(--text); min-height: 100vh; padding: 1rem; }
+    .container { max-width: 1100px; margin: 0 auto; display: block; }
+    
+    .card { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 1.25rem; margin-bottom: 1.5rem; }
+    h1 { font-size: 22px; font-weight: 500; margin-bottom: .25rem; }
+    .subtitle { font-size: 14px; color: var(--text-secondary); margin-bottom: 2rem; }
+    
+    .profile-tabs { display: flex; gap: 6px; margin-bottom: 2rem; border-bottom: 0.5px solid var(--border-md); overflow-x: auto; flex-wrap: wrap; }
+    .profile-btn { padding: 9px 20px; font-size: 15px; cursor: pointer; border: none; background: none; color: var(--text-secondary); border-bottom: 2px solid transparent; margin-bottom: -1px; font-weight: 500; display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s; }
+    .profile-btn:hover { background: var(--bg-secondary); border-radius: 12px; }
+    .profile-btn.active { color: var(--text-info); border-bottom-color: var(--text-info); background: var(--bg-info); border-radius: 20px 20px 0 0; }
+    
+    .avatar-img {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      object-fit: cover;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+      border: 1px solid var(--border-md);
+      background: white;
+    }
+
+    .avatar-careca-grisalho {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 42px;
+      height: 42px;
+      position: relative;
+      background: #d4a574;
+      border-radius: 50%;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.15);
+      flex-shrink: 0;
+    }
+    .avatar-careca-grisalho::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image: url("emoji.png");
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      border-radius: 50%;
+    }    
+    
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+    .grid-4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 16px; }
+    .field { display: flex; flex-direction: column; gap: 6px; }
+    label { font-size: 13px; color: var(--text-secondary); font-weight: 600; }
+    input, select { width: 100%; height: 40px; border-radius: var(--radius-md); border: 0.5px solid var(--border-md); padding: 0 12px; font-size: 14px; background: var(--bg); }
+    input:focus { outline: none; border-color: var(--text-info); }
+    .btn-primary { width: 100%; height: 44px; border-radius: var(--radius-md); border: none; background: var(--text-info); color: white; font-weight: 600; font-size: 14px; cursor: pointer; transition: 0.2s; }
+    .btn-primary:hover { opacity: 0.9; }
+    .btn-secondary { background: var(--bg-secondary); color: var(--text); border: 0.5px solid var(--border-md); }
+    .btn-group { display: flex; gap: 12px; margin-top: 12px; flex-wrap: wrap; }
+    .btn-icon { background: none; border: none; cursor: pointer; font-size: 20px; color: var(--text-danger); transition: 0.2s; }
+    .btn-icon:hover { transform: scale(1.1); }
+    
+    .table-wrapper { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    thead th { text-align: left; padding: 12px 8px; background: var(--bg-secondary); color: var(--text-secondary); font-weight: 600; border-bottom: 1px solid var(--border); }
+    tbody td { padding: 12px 8px; border-bottom: 0.5px solid var(--border); vertical-align: middle; }
+    .badge-status { display: inline-block; padding: 4px 12px; border-radius: 30px; font-size: 11px; font-weight: 500; }
+    .badge-normal { background: var(--bg-success); color: var(--text-success); }
+    .badge-alerta { background: var(--bg-warning); color: var(--text-warning); }
+    .badge-critico { background: var(--bg-danger); color: var(--text-danger); }
+    
+    .flex-between { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 12px; }
+    .stat-row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
+    .stat-card { background: var(--bg-secondary); border-radius: var(--radius-md); padding: 12px 16px; flex: 1; min-width: 100px; }
+    .stat-label-sm { font-size: 12px; color: var(--text-secondary); }
+    .stat-value-md { font-size: 18px; font-weight: 600; }
+    .back-link { display: inline-flex; align-items: center; gap: 6px; background: var(--bg-secondary); padding: 6px 14px; border-radius: 40px; text-decoration: none; color: var(--text); font-size: 13px; font-weight: 500; margin-bottom: 20px; border: 0.5px solid var(--border-md); transition: 0.2s; }
+    .back-link:hover { background: var(--bg-tertiary); transform: translateX(-2px); }
+    
+    @media print {
+      body { background: white; padding: 0; margin: 0; }
+      .no-print, .btn-group, .back-link, .profile-tabs, .btn-primary, .btn-icon { display: none !important; }
+      .card { box-shadow: none; border: 1px solid #ccc; page-break-inside: avoid; }
+      .container { max-width: 100%; padding: 0; }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="no-print" style="margin-bottom: 16px;">
+    <a href="index.html" class="back-link">← Voltar para Controle Financeiro</a>
+  </div>
+
+  <div class="flex-between">
+    <div>
+      <h1>🧬 Jo&Beta Família</h1>
+      <div class="subtitle">Monitoramento de Pressão, Glicemia, Pulso, Oxigenação e Peso • Registro por pessoa</div>
+    </div>
+    <div class="no-print">
+      <button onclick="window.print()" style="background: var(--bg-secondary); border: 0.5px solid var(--border-md); border-radius: 30px; padding: 8px 18px; font-weight: 500; cursor: pointer;">🖨️ Imprimir relatório atual</button>
+    </div>
+  </div>
+
+  <div class="profile-tabs no-print" id="profileTabs"></div>
+
+  <div class="card no-print">
+    <h3 style="font-size: 16px; margin-bottom: 16px;">📝 Novo registro de saúde</h3>
+    <div class="grid-4">
+      <div class="field"><label>Pressão Sistólica (mmHg)</label><input type="number" id="sistolica" placeholder="Ex: 120"></div>
+      <div class="field"><label>Pressão Diastólica (mmHg)</label><input type="number" id="diastolica" placeholder="Ex: 80"></div>
+      <div class="field"><label>Glicemia (mg/dL)</label><input type="number" id="glicemia" placeholder="Ex: 95"></div>
+      <div class="field"><label>Pulsação (bpm)</label><input type="number" id="pulso" placeholder="Ex: 72"></div>
+    </div>
+    <div class="grid-3">
+      <div class="field"><label>Oxigenação (SpO₂ %)</label><input type="number" id="oxigenacao" placeholder="Ex: 98" step="1"></div>
+      <div class="field"><label>⚖️ Peso (kg)</label><input type="number" id="peso" placeholder="Ex: 75.5" step="0.1"></div>
+      <div class="field"><label>Observações (opcional)</label><input type="text" id="obs" placeholder="Ex: Após refeição, estresse..."></div>
+    </div>
+    <div class="btn-group">
+      <button class="btn-primary" id="btnRegistrar">+ Registrar medição</button>
+      <button class="btn-primary btn-secondary" id="btnLimparCampos">Limpar campos</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="flex-between">
+      <h3 style="font-size: 16px;">📋 Histórico de <span id="nomeUsuarioAtivo">Roberta</span></h3>
+      <div class="no-print">
+        <button id="btnImprimirUsuario" class="btn-primary btn-secondary" style="width: auto; padding: 6px 16px; height: 38px;">🖨️ Imprimir histórico</button>
+      </div>
+    </div>
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr><th>Data/Hora</th><th>Pressão (mmHg)</th><th>Glicemia</th><th>Pulso</th><th>SpO₂</th><th>⚖️ Peso</th><th>Status</th><th class="no-print" style="width:40px"></th></tr>
+        </thead>
+        <tbody id="historicoBody">
+          <tr><td colspan="8" style="text-align:center">Nenhum registro encontrado. Adicione uma medição.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3 style="font-size: 15px; margin-bottom: 12px;">📊 Resumo & Últimos Indicadores</h3>
+    <div class="stat-row" id="ultimosIndicadores"></div>
+  </div>
+</div>
+
+<script>
+  // ====== REGISTRO DO SERVICE WORKER ======
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/beta/sw.js')
+        .then(reg => console.log('✅ SW registrado'))
+        .catch(err => console.log('❌ SW falhou:', err));
+    });
+  }
+
+  // ====== DADOS E FUNÇÕES ======
+  const USUARIOS = ['Roberta', 'Joelises', 'Denise'];
+  let usuarioAtivo = localStorage.getItem('saude_usuario_ativo') || 'Roberta';
+  let dadosSaude = { Roberta: [], Joelises: [], Denise: [] };
+  
+  function carregarDados() {
+    const stored = localStorage.getItem('saude_familiar_dados');
+    if(stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        USUARIOS.forEach(u => {
+          if(parsed[u]) dadosSaude[u] = parsed[u];
+          else dadosSaude[u] = [];
+        });
+      } catch(e) { console.warn(e); }
+    } else {
+      const agora = new Date();
+      const hoje = agora.toLocaleString('pt-BR');
+      const ontem = new Date(agora.getTime() - 86400000).toLocaleString('pt-BR');
+      const anteontem = new Date(agora.getTime() - 172800000).toLocaleString('pt-BR');
+      const tresDias = new Date(agora.getTime() - 259200000).toLocaleString('pt-BR');
+      
+      dadosSaude.Roberta = [
+        { dataHora: hoje, sistolica: 118, diastolica: 76, glicemia: 92, pulso: 70, oxigenacao: 98, obs: "Medição da manhã" },
+        { dataHora: ontem, sistolica: 125, diastolica: 82, glicemia: 105, pulso: 78, oxigenacao: 96, obs: "Após café" }
+      ];
+      dadosSaude.Joelises = [
+        { dataHora: anteontem, sistolica: 122, diastolica: 79, glicemia: 101, pulso: 75, oxigenacao: 97, obs: "Boa tarde" }
+      ];
+      dadosSaude.Denise = [
+        { dataHora: tresDias, sistolica: 110, diastolica: 70, glicemia: 88, pulso: 68, oxigenacao: 99, obs: "descanso" }
+      ];
+    }
+    salvarDados();
+  }
+  
+  function salvarDados() {
+    localStorage.setItem('saude_familiar_dados', JSON.stringify(dadosSaude));
+    localStorage.setItem('saude_usuario_ativo', usuarioAtivo);
+  }
+  
+  function formatPressao(sis, dia) {
+    return `${sis || '?'}/${dia || '?'}`;
+  }
+  
+  function classificarStatus(reg) {
+    let riscos = [];
+    const { sistolica, diastolica, glicemia, pulso, oxigenacao } = reg;
+    
+    if(sistolica && diastolica) {
+      if(sistolica >= 140 || diastolica >= 90) riscos.push("Pressão alta ⚠️");
+      else if(sistolica >= 130 || diastolica >= 85) riscos.push("Pré-hipertensão");
+      else riscos.push("Pressão normal");
+    }
+    if(glicemia !== undefined && glicemia !== null) {
+      if(glicemia >= 126) riscos.push("Glicemia elevada (≥126)");
+      else if(glicemia >= 100) riscos.push("Glicemia limítrofe");
+      else riscos.push("Glicemia normal");
+    }
+    if(oxigenacao !== undefined && oxigenacao !== null) {
+      if(oxigenacao < 92) riscos.push("SpO₂ crítica (<92%)");
+      else if(oxigenacao < 95) riscos.push("Baixa oxigenação");
+      else riscos.push("Oxigenação OK");
+    }
+    if(pulso !== undefined && pulso !== null) {
+      if(pulso > 100) riscos.push("Taquicardia");
+      else if(pulso < 60) riscos.push("Bradicardia");
+      else riscos.push("Pulso normal");
+    }
+    if(riscos.length === 0) return { texto: "Normal", classe: "badge-normal" };
+    const temCritico = riscos.some(r => r.includes("crítica") || r.includes("elevada") || r.includes("alta") || r.includes("Taquicardia"));
+    if(temCritico) return { texto: "Atenção médica", classe: "badge-critico" };
+    if(riscos.some(r => r.includes("limítrofe") || r.includes("Pré-hipertensão") || r.includes("Baixa oxigenação"))) 
+      return { texto: "Monitorar", classe: "badge-alerta" };
+    return { texto: "Estável", classe: "badge-normal" };
+  }
+  
+  function renderizarHistorico() {
+    const registros = dadosSaude[usuarioAtivo] || [];
+    const tbody = document.getElementById('historicoBody');
+    document.getElementById('nomeUsuarioAtivo').innerText = usuarioAtivo;
+    
+    if(registros.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center">Nenhum registro encontrado. Adicione uma medição.</td></tr>';
+      renderizarResumoIndicadores([]);
+      return;
+    }
+    
+    let html = '';
+    for(let i = 0; i < registros.length; i++) {
+      const r = registros[i];
+      const status = classificarStatus(r);
+      html += `<tr>
+        <td>${r.dataHora || '—'}</td>
+        <td>${formatPressao(r.sistolica, r.diastolica)}</td>
+        <td>${r.glicemia ? r.glicemia + ' mg/dL' : '—'}</td>
+        <td>${r.pulso ? r.pulso + ' bpm' : '—'}</td>
+        <td>${r.oxigenacao ? r.oxigenacao + '%' : '—'}</td>
+        <td>${r.peso ? r.peso + ' kg' : '—'}</td>
+        <td><span class="badge-status ${status.classe}">${status.texto}</span></td>
+        <td class="no-print"><button class="btn-icon" onclick="excluirRegistro(${i})" title="Excluir">🗑️</button></td>
+      </tr>`;
+    }
+    tbody.innerHTML = html;
+    renderizarResumoIndicadores(registros);
+  }
+  
+  function renderizarResumoIndicadores(registros) {
+    const container = document.getElementById('ultimosIndicadores');
+    if(!registros.length) {
+      container.innerHTML = '<div class="stat-card">Sem dados recentes</div>';
+      return;
+    }
+    const ultimo = registros[0];
+    const ultimos5 = registros.slice(0,5);
+    let somaSis = 0, somaDia = 0, somaGlic = 0, somaPulso = 0, somaOxi = 0, somaPeso = 0;
+    let countSis=0, countDia=0, countGlic=0, countPulso=0, countOxi=0, countPeso=0;
+    ultimos5.forEach(r => {
+      if(r.sistolica) { somaSis += r.sistolica; countSis++; }
+      if(r.diastolica) { somaDia += r.diastolica; countDia++; }
+      if(r.glicemia) { somaGlic += r.glicemia; countGlic++; }
+      if(r.pulso) { somaPulso += r.pulso; countPulso++; }
+      if(r.oxigenacao) { somaOxi += r.oxigenacao; countOxi++; }
+      if(r.peso) { somaPeso += r.peso; countPeso++; }
+    });
+    const mediaSis = countSis ? (somaSis/countSis).toFixed(0) : '—';
+    const mediaDia = countDia ? (somaDia/countDia).toFixed(0) : '—';
+    const mediaGlic = countGlic ? (somaGlic/countGlic).toFixed(0) : '—';
+    const mediaPulso = countPulso ? (somaPulso/countPulso).toFixed(0) : '—';
+    const mediaOxi = countOxi ? (somaOxi/countOxi).toFixed(0) : '—';
+    const mediaPeso = countPeso ? (somaPeso/countPeso).toFixed(1) : '—';
+    const ultimoPeso = registros.find(r => r.peso) ? registros.find(r => r.peso).peso : null;
+    
+    container.innerHTML = `
+      <div class="stat-card"><span class="stat-label-sm">📅 Última medição</span><br><span class="stat-value-md">${ultimo.dataHora?.split(',')[0] || '—'}</span></div>
+      <div class="stat-card"><span class="stat-label-sm">❤️ Pressão (última)</span><br><span class="stat-value-md">${formatPressao(ultimo.sistolica, ultimo.diastolica)}</span></div>
+      <div class="stat-card"><span class="stat-label-sm">🩸 Glicemia (última)</span><br><span class="stat-value-md">${ultimo.glicemia || '—'} mg/dL</span></div>
+      <div class="stat-card"><span class="stat-label-sm">💓 Pulso médio (5 últ.)</span><br><span class="stat-value-md">${mediaPulso} bpm</span></div>
+      <div class="stat-card"><span class="stat-label-sm">🫁 SpO₂ médio</span><br><span class="stat-value-md">${mediaOxi}%</span></div>
+      <div class="stat-card"><span class="stat-label-sm">⚖️ Média Pressão</span><br><span class="stat-value-md">${mediaSis}/${mediaDia}</span></div>
+      <div class="stat-card"><span class="stat-label-sm">🍬 Média Glicemia</span><br><span class="stat-value-md">${mediaGlic} mg/dL</span></div>
+      <div class="stat-card"><span class="stat-label-sm">⚖️ Último peso</span><br><span class="stat-value-md">${ultimoPeso ? ultimoPeso + ' kg' : '—'}</span></div>
+      <div class="stat-card"><span class="stat-label-sm">⚖️ Média peso (5 últ.)</span><br><span class="stat-value-md">${mediaPeso !== '—' ? mediaPeso + ' kg' : '—'}</span></div>
+    `;
+  }
+  
+  function registrarMedicao() {
+    const sistolica = parseInt(document.getElementById('sistolica').value);
+    const diastolica = parseInt(document.getElementById('diastolica').value);
+    const glicemia = parseInt(document.getElementById('glicemia').value);
+    const pulso = parseInt(document.getElementById('pulso').value);
+    const oxigenacao = parseInt(document.getElementById('oxigenacao').value);
+    const obs = document.getElementById('obs').value.trim();
+    const peso = parseFloat(document.getElementById('peso').value);
+    
+    if(isNaN(sistolica) && isNaN(diastolica) && isNaN(glicemia) && isNaN(pulso) && isNaN(oxigenacao) && isNaN(peso)) {
+      alert("Preencha pelo menos um campo para registrar.");
+      return;
+    }
+    if((!isNaN(sistolica) && isNaN(diastolica)) || (isNaN(sistolica) && !isNaN(diastolica))) {
+      alert("Para pressão, informe tanto a Sistólica quanto a Diastólica.");
+      return;
+    }
+    
+    const registro = {
+      dataHora: new Date().toLocaleString('pt-BR'),
+      sistolica: isNaN(sistolica) ? null : sistolica,
+      diastolica: isNaN(diastolica) ? null : diastolica,
+      glicemia: isNaN(glicemia) ? null : glicemia,
+      pulso: isNaN(pulso) ? null : pulso,
+      oxigenacao: isNaN(oxigenacao) ? null : oxigenacao,
+      obs: obs || "",
+      peso: isNaN(peso) ? null : peso
+    };
+    
+    dadosSaude[usuarioAtivo].unshift(registro);
+    salvarDados();
+    renderizarHistorico();
+    
+    document.getElementById('sistolica').value = '';
+    document.getElementById('diastolica').value = '';
+    document.getElementById('glicemia').value = '';
+    document.getElementById('pulso').value = '';
+    document.getElementById('oxigenacao').value = '';
+    document.getElementById('obs').value = '';
+    document.getElementById('peso').value = '';
+  }
+  
+  window.excluirRegistro = function(index) {
+    const registros = dadosSaude[usuarioAtivo];
+    if(registros && registros[index]) {
+      if(confirm(`Remover este registro de ${registros[index].dataHora}?`)) {
+        registros.splice(index, 1);
+        salvarDados();
+        renderizarHistorico();
+      }
+    }
+  };
+  
+  function setUsuarioAtivo(usuario) {
+    if(!USUARIOS.includes(usuario)) return;
+    usuarioAtivo = usuario;
+    salvarDados();
+    document.querySelectorAll('.profile-btn').forEach(btn => {
+      if(btn.getAttribute('data-user') === usuario) btn.classList.add('active');
+      else btn.classList.remove('active');
+    });
+    renderizarHistorico();
+  }
+  
+  function imprimirHistoricoUsuario() {
+    const registros = dadosSaude[usuarioAtivo] || [];
+    if(registros.length === 0) {
+      alert("Nenhum registro para imprimir.");
+      return;
+    }
+    const win = window.open('', '_blank');
+    if(!win) { alert("Permita pop-ups para impressão."); return; }
+    let htmlContent = `
+      <!DOCTYPE html>
+      <html>
+      <head><meta charset="UTF-8"><title>Relatório Saúde - ${usuarioAtivo}</title>
+      <style>
+        body { font-family: system-ui, sans-serif; margin: 2rem; }
+        h1 { color: #185fa5; }
+        table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+        th, td { border: 1px solid #aaa; padding: 8px; text-align: left; }
+        th { background: #f0f0f0; }
+        .footer { margin-top: 30px; font-size: 12px; color: gray; }
+      </style>
+      </head>
+      <body>
+      <h1>🧾 Relatório de Saúde - ${usuarioAtivo}</h1>
+      <p>Data de geração: ${new Date().toLocaleString('pt-BR')}</p>
+      <table><thead><tr><th>Data/Hora</th><th>Pressão (mmHg)</th><th>Glicemia</th><th>Pulso</th><th>SpO₂</th><th>Peso</th><th>Observações</th></tr></thead><tbody>
+    `;
+    registros.forEach(reg => {
+      const pressao = reg.sistolica && reg.diastolica ? `${reg.sistolica}/${reg.diastolica}` : '—';
+      htmlContent += `<tr>
+        <td>${reg.dataHora || '—'}</td>
+        <td>${pressao}</td>
+        <td>${reg.glicemia ? reg.glicemia : '—'}</td>
+        <td>${reg.pulso ? reg.pulso : '—'}</td>
+        <td>${reg.oxigenacao ? reg.oxigenacao : '—'}</td>
+        <td>${reg.peso ? reg.peso + ' kg' : '—'}</td>
+        <td>${reg.obs || '—'}</td>
+      </tr>`;
+    });
+    htmlContent += `</tbody></table><div class="footer">Jo&Beta Controle - Registros particulares. Em caso de dúvidas, consulte um médico.</div></body></html>`;
+    win.document.write(htmlContent);
+    win.document.close();
+    win.print();
+  }
+  
+  function initUI() {
+    const tabsDiv = document.getElementById('profileTabs');
+    tabsDiv.innerHTML = '';
+    
+    const usuariosInfo = [
+      { nome: 'Roberta', icone: 'roberta.png', label: 'Roberta', tipo: 'foto' },
+      { nome: 'Joelises', icone: '👨‍🦲', label: 'Joelises', tipo: 'careca' },
+      { nome: 'Denise', icone: 'denise.png', label: 'Denise', tipo: 'foto' }
+    ];
+    
+    usuariosInfo.forEach(user => {
+      const btn = document.createElement('button');
+      btn.className = 'profile-btn';
+      if(user.nome === usuarioAtivo) btn.classList.add('active');
+      btn.setAttribute('data-user', user.nome);
+      
+      if(user.tipo === 'foto') {
+        btn.innerHTML = `
+          <img src="${user.icone}" class="avatar-img" alt="${user.label}">
+          ${user.label}
+        `;
+      } else if(user.tipo === 'careca') {
+        btn.innerHTML = `
+          <span class="avatar-careca-grisalho" style="background:#c9a06c;"></span>
+          ${user.label}
+        `;
+      } else {
+        btn.innerHTML = `
+          <span style="font-size:1.2rem;">${user.icone}</span>
+          ${user.label}
+        `;
+      }
+      
+      btn.addEventListener('click', function() { setUsuarioAtivo(user.nome); });
+      tabsDiv.appendChild(btn);
+    });
+    
+    document.getElementById('btnRegistrar').addEventListener('click', registrarMedicao);
+    document.getElementById('btnLimparCampos').addEventListener('click', function() {
+      document.getElementById('sistolica').value = '';
+      document.getElementById('diastolica').value = '';
+      document.getElementById('glicemia').value = '';
+      document.getElementById('pulso').value = '';
+      document.getElementById('oxigenacao').value = '';
+      document.getElementById('obs').value = '';
+      document.getElementById('peso').value = '';
+    });
+    document.getElementById('btnImprimirUsuario').addEventListener('click', imprimirHistoricoUsuario);
+    renderizarHistorico();
+  }
+  
+  carregarDados();
+  initUI();
+</script>
+</body>
+</html>
