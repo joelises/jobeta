@@ -302,7 +302,8 @@
       order: 999;
     }
     .shop-item.done .shop-name,
-    .shop-item.done .shop-qty {
+    .shop-item.done .shop-qty,
+    .shop-item.done .shop-price {
       text-decoration: line-through;
       color: var(--text-tertiary);
     }
@@ -310,8 +311,10 @@
     .shop-body { flex: 1; min-width: 0; }
     .shop-name { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .shop-code { font-size: 11px; color: var(--text-tertiary); margin-top: 1px; }
-    .shop-qty  { flex-shrink: 0; font-size: 13px; font-weight: 600; color: var(--text-danger); text-align: right; }
+    .shop-qty  { flex-shrink: 0; font-size: 13px; font-weight: 600; color: var(--text-danger); text-align: right; margin-right: 8px; }
     .shop-qty span { font-size: 11px; font-weight: 400; color: var(--text-tertiary); }
+    .shop-price { flex-shrink: 0; font-size: 12px; font-weight: 500; color: var(--text-success); text-align: right; min-width: 70px; }
+    .shop-price span { font-size: 10px; font-weight: 400; }
     .shop-hint { font-size: 11px; color: var(--text-tertiary); margin-top: 8px; text-align: center; padding: 4px 0; border-top: 0.5px solid var(--border); }
     .shopping-empty { text-align: center; padding: 1.5rem; color: var(--text-tertiary); font-size: 13px; }
     .btn-clear-shop { background: var(--bg-warning); color: var(--text-warning); border-color: #f0d090; }
@@ -703,8 +706,10 @@ function renderCompras() {
   const concluidos = sel.filter(p => shopDone.has(p.id));
   const ordenados  = [...pendentes, ...concluidos];
 
+  // ALTERAÇÃO AQUI: Adicionamos o preço no HTML da lista de compras
   el.innerHTML = ordenados.map(p => {
     const done = shopDone.has(p.id);
+    const precoFormatado = Number(p.preco).toFixed(2);
     return `
       <div class="shop-item${done ? ' done' : ''}" onclick="toggleShopDone(${p.id})" title="${done ? 'Marcar como pendente' : 'Marcar como comprado'}">
         <span class="shop-icon">${done ? '✅' : '🛒'}</span>
@@ -713,6 +718,7 @@ function renderCompras() {
           <div class="shop-code">${esc(p.codigo)}</div>
         </div>
         <div class="shop-qty">${p.comprar > 0 ? p.comprar : '?'}<br><span>un.</span></div>
+        <div class="shop-price">R$ ${precoFormatado}<br><span>cada</span></div>
       </div>`;
   }).join('');
 
@@ -750,12 +756,14 @@ function imprimirCompras() {
   if (!sel.length) { toast('Lista de compras vazia.', 'err'); return; }
   const pendentes  = sel.filter(p => !shopDone.has(p.id));
   const concluidos = sel.filter(p =>  shopDone.has(p.id));
+  // ALTERAÇÃO NA IMPRESSÃO: Adicionamos coluna de Preço
   const rows = [...pendentes, ...concluidos].map((p, i) => `
     <tr class="${shopDone.has(p.id) ? 'done' : ''}">
       <td>${i + 1}</td>
       <td>${esc(p.codigo)}</td>
       <td>${shopDone.has(p.id) ? '<s>' + esc(p.nome) + '</s>' : esc(p.nome)}</td>
       <td>${p.comprar > 0 ? p.comprar : '?'}</td>
+      <td>R$ ${Number(p.preco).toFixed(2)}</td>
       <td>${shopDone.has(p.id) ? '✅ Comprado' : '⬜ Pendente'}</td>
     </tr>`).join('');
 
@@ -775,9 +783,10 @@ function imprimirCompras() {
     <h2>🛒 Lista de Compras — Jo&amp;Beta</h2>
     <div class="sub">Emitida em ${hoje()} &nbsp;|&nbsp; ${sel.length} produto(s)</div>
     <table>
-      <thead><tr><th>#</th><th>Código</th><th>Produto</th><th>Qtd.</th><th>Status</th></tr></thead>
+      <thead><tr><th>#</th><th>Código</th><th>Produto</th><th>Qtd.</th><th>Preço Unit.</th><th>Status</th></tr></thead>
       <tbody>${rows}</tbody>
-    </table></body></html>`);
+    </table>
+    </body></html>`);
   win.document.close();
   setTimeout(() => win.print(), 350);
 }
