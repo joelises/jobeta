@@ -1,0 +1,1005 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  
+  <!-- PWA Meta Tags -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Jo&Beta">
+  <meta name="theme-color" content="#185fa5">
+  <meta name="description" content="Controle financeiro, estoque e saúde familiar">
+  
+  <!-- Manifest -->
+   <link rel="manifest" href="/beta/manifest.json">
+  <!-- iOS Splash Screen -->
+     <link rel="apple-touch-icon" href="/beta/J&B.png">
+  <title>Controle Financeiro</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #ffffff; --bg-secondary: #f5f5f4; --bg-tertiary: #eeede9;
+      --bg-info: #e6f1fb; --bg-success: #eaf3de; --bg-danger: #fcebeb; --bg-warning: #faeeda;
+      --text: #1a1a18; --text-secondary: #6b6b67; --text-tertiary: #9e9e9a;
+      --text-info: #185fa5; --text-success: #3b6d11; --text-danger: #a32d2d; --text-warning: #854f0b;
+      --border: rgba(0,0,0,0.12); --border-md: rgba(0,0,0,0.22);
+      --radius-md: 8px; --radius-lg: 12px;
+      --font: system-ui, -apple-system, 'Segoe UI', sans-serif;
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+    }
+    
+    /* Prevenir pull-to-refresh e zoom indesejado */
+    html, body {
+      overscroll-behavior-y: contain;
+      -webkit-overflow-scrolling: touch;
+      touch-action: manipulation;
+    }
+    
+    body { 
+      font-family: var(--font); 
+      background: var(--bg-tertiary); 
+      color: var(--text); 
+      min-height: 100vh; 
+      padding: 1rem; 
+      padding-bottom: calc(80px + var(--safe-bottom)); /* Aumentado para acomodar o footer fixo */
+      position: relative;
+    }
+    
+    .container { max-width: 980px; margin: 0 auto; display: none; }
+    .visible { display: block !important; }
+    
+    /* ===== RODAPÉ ESTILIZADO ===== */
+    .app-footer {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(255, 255, 255, 0.96);
+      backdrop-filter: blur(10px);
+      border-top: 1px solid var(--border);
+      padding: 10px 20px;
+      padding-bottom: calc(10px + var(--safe-bottom));
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      z-index: 1000;
+      font-size: 13px;
+      color: var(--text-secondary);
+      box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+    }
+    
+    .footer-left {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    
+    .footer-email {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--bg-secondary);
+      padding: 6px 12px;
+      border-radius: 40px;
+      font-size: 12px;
+    }
+    
+    .footer-email::before {
+      content: "✉️";
+      font-size: 14px;
+    }
+    
+    .footer-date {
+      font-size: 11px;
+      opacity: 0.7;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .footer-date::before {
+      content: "📅";
+      font-size: 12px;
+    }
+    
+    .footer-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    
+    .footer-emoji {
+      width: 42px;
+      height: 42px;
+      background: #f0f0f0;
+      border-radius: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      transition: transform 0.2s ease;
+    }
+    
+    /*.footer-emoji:active {
+      transform: scale(0.95);
+    }
+    
+    /* Caso a imagem emoji.png exista, descomente a linha abaixo e comente a linha de cima */
+    * .footer-emoji {
+      background: url('emoji.png') center/contain no-repeat;
+      background-size: 70%;
+      background-color: #f0f0f0;
+    }
+    .footer-emoji span {
+      display: none;
+    } */
+    
+    /* Ajuste para telas pequenas */
+    @media (max-width: 550px) {
+      .app-footer {
+        flex-direction: column;
+        text-align: center;
+        padding: 12px 16px;
+        padding-bottom: calc(12px + var(--safe-bottom));
+      }
+      .footer-right {
+        order: -1;
+        margin-bottom: 4px;
+      }
+      .footer-left {
+        align-items: center;
+      }
+      body {
+        padding-bottom: calc(130px + var(--safe-bottom));
+      }
+    }
+    
+    /* Banner de Instalação PWA */
+    .install-banner {
+      display: none;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: var(--text-info);
+      color: white;
+      padding: 12px 1rem;
+      z-index: 9998;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding-bottom: calc(12px + var(--safe-bottom));
+      animation: slideUp 0.3s ease-out;
+    }
+    
+    @keyframes slideUp {
+      from { transform: translateY(100%); }
+      to { transform: translateY(0); }
+    }
+    
+    .install-banner.show { display: flex; }
+    .install-btn {
+      background: white;
+      color: var(--text-info);
+      border: none;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .install-close {
+      background: none;
+      border: none;
+      color: white;
+      font-size: 20px;
+      cursor: pointer;
+      padding: 4px 8px;
+    }
+    
+    /* Autenticação */
+    .auth-overlay { 
+      position: fixed; 
+      inset: 0; 
+      background: var(--bg-tertiary); 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      z-index: 9999; 
+      padding: 1rem;
+    }
+    .auth-card { 
+      background: var(--bg); 
+      border: 0.5px solid var(--border); 
+      border-radius: var(--radius-lg); 
+      padding: 2rem; 
+      width: 100%; 
+      max-width: 360px; 
+      text-align: center; 
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1); 
+    }
+    .hidden { display: none !important; }
+    .auth-input { 
+      width: 100%; 
+      height: 48px; 
+      border-radius: 8px; 
+      border: 1px solid var(--border-md); 
+      margin-bottom: 10px; 
+      padding: 0 12px; 
+      text-align: center; 
+      font-size: 16px; 
+      background: var(--bg);
+    }
+    .auth-btn { 
+      width: 100%; 
+      height: 48px; 
+      border: none; 
+      border-radius: 8px; 
+      background: var(--text-info); 
+      color: white; 
+      font-weight: bold; 
+      font-size: 16px;
+      cursor: pointer; 
+      transition: opacity 0.2s;
+    }
+    .auth-btn:active { opacity: 0.8; }
+
+    /* Layout */
+    h1 { font-size: 22px; font-weight: 500; margin-bottom: .25rem; }
+    .subtitle { font-size: 14px; color: var(--text-secondary); margin-bottom: 2rem; }
+    .card { 
+      background: var(--bg); 
+      border: 0.5px solid var(--border); 
+      border-radius: var(--radius-lg); 
+      padding: 1.25rem; 
+      margin-bottom: 1.5rem; 
+    }
+    .main-tabs { 
+      display: flex; 
+      gap: 4px; 
+      margin-bottom: 2rem; 
+      border-bottom: 0.5px solid var(--border-md); 
+      overflow-x: auto; 
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .main-tabs::-webkit-scrollbar { display: none; }
+    
+    .main-tab { 
+      padding: 12px 20px; 
+      font-size: 14px; 
+      cursor: pointer; 
+      border: none; 
+      background: none; 
+      color: var(--text-secondary); 
+      border-bottom: 2px solid transparent; 
+      margin-bottom: -1px; 
+      white-space: nowrap; 
+      transition: all 0.2s;
+      min-height: 48px;
+      display: flex;
+      align-items: center;
+    }
+    .main-tab.active { color: var(--text); border-bottom-color: var(--text); font-weight: 500; }
+    .page { display: none; }
+    .page.active { display: block; }
+
+    /* Grid e UI */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+    .field { display: flex; flex-direction: column; gap: 4px; }
+    label { font-size: 13px; color: var(--text-secondary); font-weight: 500; }
+    input, select { 
+      width: 100%; 
+      height: 44px; 
+      border-radius: var(--radius-md); 
+      border: 0.5px solid var(--border-md); 
+      padding: 0 10px; 
+      font-size: 16px;
+      background: var(--bg);
+      color: var(--text);
+      -webkit-appearance: none;
+    }
+    input:focus, select:focus { outline: none; border-color: var(--text-info); }
+    
+    .btn-primary { 
+      width: 100%; 
+      height: 48px; 
+      border-radius: var(--radius-md); 
+      border: 0.5px solid var(--border-md); 
+      background: var(--bg-secondary); 
+      font-size: 15px; 
+      font-weight: 500; 
+      cursor: pointer; 
+      transition: all 0.2s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn-primary:active { transform: scale(0.98); background: var(--bg-tertiary); }
+    .btn-del { 
+      background: none; 
+      border: none; 
+      cursor: pointer; 
+      color: var(--text-danger); 
+      font-size: 24px; 
+      padding: 8px;
+      min-width: 44px;
+      min-height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* Stats e Tabelas */
+    .stats { 
+      display: grid; 
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); 
+      gap: 12px; 
+      margin-bottom: 1.5rem; 
+    }
+    .stat { 
+      background: var(--bg-secondary); 
+      border-radius: var(--radius-md); 
+      padding: 1rem; 
+    }
+    .stat-label { font-size: 12px; color: var(--text-secondary); display: block; }
+    .stat-value { font-size: 20px; font-weight: 500; }
+    .red { color: var(--text-danger); }
+    .green { color: var(--text-success); }
+    .blue { color: var(--text-info); }
+    
+    /* Tabelas com scroll horizontal */
+    .table-container {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      margin: -1px;
+    }
+    
+    table { 
+      width: 100%; 
+      border-collapse: collapse; 
+      min-width: 500px;
+    }
+    thead th { 
+      font-size: 12px; 
+      color: var(--text-secondary); 
+      text-align: left; 
+      padding: 12px 10px; 
+      border-bottom: 0.5px solid var(--border); 
+      background: var(--bg);
+      position: sticky;
+      top: 0;
+    }
+    tbody td { 
+      padding: 14px 10px; 
+      font-size: 14px; 
+      vertical-align: middle; 
+    }
+    .badge { 
+      display: inline-block; 
+      padding: 5px 12px; 
+      border-radius: 20px; 
+      font-size: 12px; 
+      font-weight: 500; 
+      min-height: 32px;
+      display: inline-flex;
+      align-items: center;
+      cursor: pointer;
+      border: none;
+      font-family: var(--font);
+    }
+    .badge-pago { background: var(--bg-success); color: var(--text-success); }
+    .badge-nao { background: var(--bg-danger); color: var(--text-danger); }
+
+    .cards-grid { 
+      display: grid; 
+      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); 
+      gap: 10px; 
+      margin-bottom: 1.5rem; 
+    }
+    .card-chip { 
+      background: var(--bg); 
+      border: 0.5px solid var(--border); 
+      border-radius: var(--radius-lg); 
+      padding: 16px; 
+      cursor: pointer; 
+      transition: all 0.2s;
+      min-height: 60px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .card-chip:active { transform: scale(0.96); }
+    .card-chip.selected { border: 2px solid #185FA5; }
+    .card-chip .cn { font-size: 13px; font-weight: 500; }
+    .card-chip .cv { font-size: 14px; color: var(--text-secondary); margin-top: 4px; }
+
+    tr.clickable { cursor: pointer; }
+    tr.clickable:active { background: var(--bg-secondary); }
+
+    /* Botão menu extra */
+    .menu-buttons { 
+      display: flex; 
+      gap: 8px; 
+      flex-wrap: wrap; 
+      justify-content: flex-end; 
+    }
+    .menu-btn { 
+      background: var(--bg-secondary); 
+      border: 0.5px solid var(--border-md); 
+      padding: 10px 16px; 
+      border-radius: var(--radius-md); 
+      cursor: pointer; 
+      font-size: 13px; 
+      transition: all 0.2s; 
+      text-decoration: none;
+      color: var(--text);
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      min-height: 44px;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .menu-btn:active { transform: scale(0.96); }
+    .menu-btn.saude { background: #e8f5e9; border-color: #a5d6a7; color: #2e7d32; }
+    
+    /* Responsivo */
+    @media (max-width: 640px) {
+      body { padding: 0.75rem; padding-bottom: calc(0.75rem + 80px); }
+      h1 { font-size: 20px; }
+      .grid-3 { grid-template-columns: 1fr; }
+      .grid-2 { grid-template-columns: 1fr; }
+      .card { padding: 1rem; }
+      .stats { grid-template-columns: 1fr 1fr; }
+      .stat-value { font-size: 18px; }
+      tbody td { padding: 12px 8px; font-size: 13px; }
+    }
+  </style>
+</head>
+<body>
+<div id="installBanner" class="install-banner">
+  <span style="font-size:14px; flex:1;">📱 Instale este app na tela inicial</span>
+  <button class="install-btn" id="installBtn">Instalar</button>
+  <button class="install-close" id="installClose">×</button>
+</div>
+
+<div id="auth-screen" class="auth-overlay">
+  <div id="setup-view" class="auth-card hidden">
+    <img src="roberta.png" style="width:90px; margin-bottom:10px; border-radius:12px;" alt="Logo">
+    <p style="margin-bottom:20px; color:var(--text-secondary)">Crie uma senha de acesso.</p>
+    <input type="password" id="new-pw" class="auth-input" placeholder="Nova senha" autocomplete="new-password">
+    <input type="password" id="conf-pw" class="auth-input" placeholder="Confirme a senha" autocomplete="new-password">
+    <button class="auth-btn" onclick="salvarSenha()">Cadastrar e Entrar</button>
+  </div>
+  <div id="login-view" class="auth-card hidden">
+    <img src="roberta.png" style="width:90px; margin-bottom:10px; border-radius:12px;" alt="Logo">
+    <p style="margin-bottom:20px; color:var(--text-secondary)">Digite sua senha para entrar.</p>
+    <input type="password" id="login-pw" class="auth-input" placeholder="Sua senha" autocomplete="current-password">
+    <button class="auth-btn" onclick="fazerLogin()">Entrar</button>
+    <p id="login-err" style="color:var(--text-danger); font-size:12px; margin-top:10px"></p>
+  </div>
+</div>
+
+<div id="main-app" class="container">
+  <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:1rem; flex-wrap:wrap; gap:10px;">
+    <div>
+      <h1>Controle Financeiro</h1>
+      <div class="subtitle">Gestão de gastos e obrigações mensais</div>
+    </div>
+    <div class="menu-buttons">
+      <a href="estoque.html" class="menu-btn">📦 Estoque</a>
+      <a href="saude.html" class="menu-btn saude">🏥 Saúde</a>
+      <button class="menu-btn" onclick="sair()">🔒 Sair</button>
+    </div>
+  </div>
+
+  <div class="main-tabs">
+    <button class="main-tab active" onclick="showPage('cartao', this)">Cartões</button>
+    <button class="main-tab" onclick="showPage('obrig', this)">Obrigações</button>
+    <button class="main-tab" onclick="showPage('resumo', this)">Resumo Mensal</button>
+    <button class="main-tab" onclick="showPage('espolio', this)">Espólio</button>
+    <button class="main-tab" onclick="showPage('config', this)">⚙ Config</button>
+  </div>
+
+  <!-- PAGE: CARTÃO -->
+  <div id="page-cartao" class="page active">
+    <div id="cards-grid" class="cards-grid"></div>
+    <div class="card">
+      <div class="grid-3">
+        <div class="field"><label>Valor (R$)</label><input type="number" id="c-valor" step="0.01" inputmode="decimal"></div>
+        <div class="field"><label>Local/Descrição</label><input type="text" id="c-local" autocomplete="off"></div>
+        <div class="field"><label>Data</label><input type="date" id="c-data"></div>
+      </div>
+      <div class="grid-2">
+        <div class="field"><label>Tipo</label><select id="c-tipo"><option value="Vista">À Vista</option><option value="Parcelado">Parcelado</option></select></div>
+        <div class="field"><label>Parcelas</label><input type="number" id="c-parcelas" value="1" inputmode="numeric"></div>
+      </div>
+      <button class="btn-primary" onclick="lancarCartao()" style="margin-top:15px">+ Lançar gasto</button>
+    </div>
+    <div class="card" style="padding:0; overflow:hidden">
+      <div class="table-container">
+        <table>
+          <thead><tr><th>Data</th><th>Cartão</th><th>Local</th><th>Valor</th><th style="width:44px"></th></tr></thead>
+          <tbody id="extrato-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAGE: OBRIGAÇÕES -->
+  <div id="page-obrig" class="page">
+    <div class="card">
+      <div class="grid-3">
+        <div class="field"><label>Nome da Obrigação</label><input type="text" id="o-nome" autocomplete="off"></div>
+        <div class="field"><label>Valor (R$)</label><input type="number" id="o-valor" step="0.01" inputmode="decimal"></div>
+        <div class="field"><label>Data Vencimento</label><input type="date" id="o-data"></div>
+      </div>
+      <div class="grid-2" style="margin-top:10px">
+        <div class="field"><label>Sugestões (Baseado no Vencimento)</label>
+          <select id="o-lista" onchange="preencherObrig()">
+            <option value="">-- Selecione para preencher --</option>
+            <option value="Internet Itanhaem |10">Internet Itanhaem (Dia 10)</option>
+            <option value="Agua Itanhaem |20">Agua Itanhaem  (Dia 20)</option>
+            <option value="Vivo Internet |26">Vivo Internet    (Dia 26)</option>
+            <option value="Agua Paulicéia|19">Agua Paulicéia  (Dia 19)</option>
+             <option value="Luz Casa 01  |25">Luz Casa 01    (Dia 25)</option>
+             <option value="Luz Casa 02  |25">Luz Casa 02    (Dia 25)</option>
+             <option value="Luz Itanhaem |21">Luz Itanhaem   (Dia 21)</option>
+             <option value="IPTU Paulicéia|16">IPTU Paulicéia (Dia 16)</option>
+             <option value="IPTU Itanhaem |20">IPTU Itanhaem  (Dia 20)</option>
+             <option value="Denise Tim    |25">Denise Tim     (Dia 25)</option>
+             <option value="Beta Tim      |20">Beta Tim       (Dia 14)</option>
+              <option value="Joelises Tim |19">Joelises Tim (Dia 19)</option>
+               <option value="Tarifa Bradesco|02">Tarifa Bradesco (Dia 02)</option>
+                <option value="Caixinha Gas  |01">Caixinha Gas   (Dia 01)</option>
+                 <option value="Cemiterio Carnê |15">Cemiterio Carnê(Dia 15)</option>
+                  <option value="Caixinha Cemiterio |02">Caixinha Cemiterio (Dia 02)</option>
+                   <option value="Mesada Denise |02">Mesada Denise (Dia 02)</option>
+                    <option value="IPTU Multa |19">IPTU Multa   (Dia 19)</option>
+                     <option value="Congas |06">Congas  (Dia 06)</option>
+                      <option value="Speed Tv |08">Speed Tv (Dia 08)</option>
+                       <option value="IPVA|19">IPVA  (Dia 19)</option>
+                        <option value="Caixinha Final de Ano |02">Caixinha Final de Ano  (Dia 02)</option>
+                         <option value="caixinha Licenciamento |05">caixinha Licenciamento  (Dia 05)</option>
+            <option value="Emprestimo Denis|01">Emprestimo Denis (Dia 01)</option>
+             <option value="02">02</option>
+              <option value="03">03</option>
+               <option value="04">04</option>
+                <option value="05">05</option>
+                 <option value="06">06</option>
+                  <option value="07">07</option>
+                   <option value="08">08</option>
+                    <option value="09">09</option>
+                     <option value="10">10</option>
+          </select>
+        </div>
+        <div style="display:flex; align-items:flex-end">
+          <button class="btn-primary" onclick="lancarObrigacao()">+ Lançar obrigação</button>
+        </div>
+      </div>
+    </div>
+    <div class="card" style="padding:0; overflow:hidden">
+      <div class="table-container">
+        <table>
+          <thead><tr><th>Vencimento</th><th>Nome</th><th>Valor</th><th>Status</th><th style="width:44px"></th></tr></thead>
+          <tbody id="obrig-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAGE: RESUMO -->
+  <div id="page-resumo" class="page">
+    <div class="stats">
+      <div class="stat"><span class="stat-label">Renda Mensal</span><span class="stat-value blue" id="rg-renda">R$ 0,00</span></div>
+      <div class="stat"><span class="stat-label">Total Obrigações</span><span class="stat-value red" id="rg-obl">R$ 0,00</span></div>
+      <div class="stat"><span class="stat-label">Total Cartões</span><span class="stat-value red" id="rg-cart">R$ 0,00</span></div>
+      <div class="stat"><span class="stat-label">Em Aberto</span><span class="stat-value red" id="rg-ab">R$ 0,00</span></div>
+      <div class="stat"><span class="stat-label">% Comprometido</span><span class="stat-value" id="rg-pct">0%</span></div>
+      <div class="stat" style="background:var(--bg-success)"><span class="stat-label">💰 Disponível para gastar</span><span class="stat-value green" id="rg-disp">R$ 0,00</span></div>
+    </div>
+    <div class="card" style="padding:0; overflow:hidden">
+      <div class="table-container">
+        <table>
+          <thead><tr><th>Data</th><th>Descrição</th><th>Origem</th><th>Valor</th><th>Situação</th></tr></thead>
+          <tbody id="rg-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAGE: ESPÓLIO -->
+  <div id="page-espolio" class="page">
+    <div class="card">
+      <input type="hidden" id="esp-id">
+      <div class="grid-3">
+        <div class="field"><label>Nome</label><input type="text" id="esp-nome" autocomplete="off"></div>
+        <div class="field"><label>Valor (R$)</label><input type="number" id="esp-valor" step="0.01" inputmode="decimal"></div>
+        <div class="field"><label>Data Criação</label><input type="date" id="esp-data"></div>
+      </div>
+      <button id="esp-btn" class="btn-primary" onclick="addEspolio()" style="margin-top:15px">+ Adicionar caixa</button>
+    </div>
+    <div class="card" style="padding:0; overflow:hidden">
+      <div class="table-container">
+        <table>
+          <thead><tr><th>Data</th><th>Nome</th><th>Valor</th><th style="width:44px"></th></tr></thead>
+          <tbody id="esp-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAGE: CONFIG -->
+  <div id="page-config" class="page">
+    <div class="card">
+      <div class="section-title" style="font-size:15px; font-weight:600; margin-bottom:14px;">💰 Renda Mensal</div>
+      <div class="field">
+        <label>Valor da sua renda mensal (R$)</label>
+        <input type="number" id="cfg-renda" step="0.01" inputmode="decimal" placeholder="Ex: 3500,00">
+      </div>
+      <button class="btn-primary" onclick="salvarRenda()" style="margin-top:12px; background:var(--bg-success); color:var(--text-success)">✓ Salvar renda</button>
+    </div>
+    <div class="section-title" style="font-size:14px; font-weight:500; margin-bottom:12px;">Configurar Cartões</div>
+    <div id="config-list"></div>
+  </div>
+</div>
+
+<!-- ===== RODAPÉ COM EMOJI, E-MAIL E DATA ===== -->
+<footer class="app-footer" style="
+  background: linear-gradient(135deg, #185fa5 0%, #0c447c 60%, #185fa5 100%);
+  border-top: none;
+  padding: 12px 20px;
+  padding-bottom: calc(12px + var(--safe-bottom));
+  display: flex; align-items: center;
+  justify-content: center;
+  flex-wrap: wrap; gap: 12px;
+">
+  <div style="width:48px; height:48px; background:rgba(255,255,255,0.15); border-radius:50%; overflow:hidden; border:1px solid rgba(255,255,255,0.3); flex-shrink:0;">
+  <img src="emoji.png" alt="Emoji" style="width:100%; height:100%; object-fit:cover;">
+</div>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:4px;">
+      <div style="display:flex; align-items:center; gap:6px; background:rgba(255,255,255,0.15); border-radius:20px; padding:5px 14px; border:1px solid rgba(255,255,255,0.2); font-size:12px; color:#fff;">
+        ✉️ mantovanijoelises@gmail.com
+      </div>
+      <span style="font-size:11px; color:rgba(255,255,255,0.6); padding-left:4px;">📅 Criado em: 02/05/2026</span>
+    </div>
+  </div>
+</footer>
+<script>
+// ====== PWA - Registro do Service Worker ======
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/beta/sw.js')
+      .then(reg => console.log('✅ Service Worker registrado:', reg.scope))
+      .catch(err => console.log('❌ Service Worker falhou:', err));
+  });
+}
+
+// ====== PWA - Banner de Instalação ======
+let deferredPrompt;
+const installBanner = document.getElementById('installBanner');
+const installBtn = document.getElementById('installBtn');
+const installClose = document.getElementById('installClose');
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  installBanner.classList.add('show');
+});
+
+installBtn.addEventListener('click', async () => {
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    console.log(`Usuário ${outcome === 'accepted' ? 'aceitou' : 'recusou'} a instalação`);
+    deferredPrompt = null;
+    installBanner.classList.remove('show');
+  }
+});
+
+installClose.addEventListener('click', () => {
+  installBanner.classList.remove('show');
+});
+
+window.addEventListener('appinstalled', () => {
+  console.log('✅ App instalado com sucesso!');
+  installBanner.classList.remove('show');
+});
+
+// ====== ESTADO ======
+var CARTOES_DEF = [{id:'mp',nome:'Mercado Pago'},{id:'bd',nome:'Bradescard'},{id:'cr',nome:'Carrefour'},{id:'az',nome:'Cartão Azul'},{id:'as',nome:'Cartão Assaí'},{id:'td',nome:'Cartão Tenda'},{id:'sk',nome:'Cartão Skala'}];
+var cartoes = JSON.parse(localStorage.getItem('cartoes_cfg') || 'null') || CARTOES_DEF.map(function(c){return {id:c.id, nome:c.nome, limite:2000, vencimento:10};});
+var lancamentos = JSON.parse(localStorage.getItem('lanc_cartoes') || '[]');
+var obrigacoes = JSON.parse(localStorage.getItem('obrigacoes') || '[]');
+var espolio = JSON.parse(localStorage.getItem('espolio') || '[]');
+var estoque = JSON.parse(localStorage.getItem('estoque') || '[]');
+var selCard = cartoes[0].id;
+var rendaMensal = parseFloat(localStorage.getItem('renda_mensal') || '0');
+var lastMonthCheck = localStorage.getItem('last_month_check') || '';
+
+function save() {
+  localStorage.setItem('cartoes_cfg', JSON.stringify(cartoes));
+  localStorage.setItem('lanc_cartoes', JSON.stringify(lancamentos));
+  localStorage.setItem('obrigacoes', JSON.stringify(obrigacoes));
+  localStorage.setItem('espolio', JSON.stringify(espolio));
+  localStorage.setItem('estoque', JSON.stringify(estoque));
+  localStorage.setItem('last_month_check', lastMonthCheck);
+  localStorage.setItem('renda_mensal', rendaMensal);
+}
+
+function fmt(v) { return 'R$ ' + Number(v).toLocaleString('pt-BR', {minimumFractionDigits:2}); }
+
+// ====== AUTOMAÇÃO MENSAL ======
+function checkNewMonth() {
+  var now = new Date();
+  var currentMonthKey = now.getFullYear() + '-' + (now.getMonth() + 1);
+  
+  if (lastMonthCheck !== currentMonthKey) {
+    var prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    var prevMonthKey = prevMonth.getFullYear() + '-' + (prevMonth.getMonth() + 1);
+    
+    var prevObrig = obrigacoes.filter(function(o) {
+      return o.data.indexOf(prevMonthKey) === 0;
+    });
+
+    if (prevObrig.length > 0) {
+      prevObrig.forEach(function(o) {
+        var dia = o.data.split('-')[2] || '01';
+        var novaData = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + dia;
+        obrigacoes.push({
+          id: Date.now() + Math.random(),
+          nome: o.nome,
+          valor: o.valor,
+          data: novaData,
+          pago: false
+        });
+      });
+      save();
+    }
+    lastMonthCheck = currentMonthKey;
+    save();
+  }
+}
+
+// ====== AUTH ======
+function initAuth() {
+  var senha = localStorage.getItem('app_pw');
+  var logado = sessionStorage.getItem('is_auth');
+  if (!senha) { document.getElementById('setup-view').className = 'auth-card'; }
+  else if (logado !== '1') { document.getElementById('login-view').className = 'auth-card'; }
+  else { entrar(); }
+}
+function salvarSenha() {
+  var p1 = document.getElementById('new-pw').value;
+  var p2 = document.getElementById('conf-pw').value;
+  if (p1.length < 4) { alert('Mínimo 4 caracteres!'); return; }
+  if (p1 !== p2) { alert('Senhas não conferem!'); return; }
+  localStorage.setItem('app_pw', p1);
+  sessionStorage.setItem('is_auth', '1');
+  location.reload();
+}
+function fazerLogin() {
+  if (document.getElementById('login-pw').value === localStorage.getItem('app_pw')) {
+    sessionStorage.setItem('is_auth', '1'); entrar();
+  } else { document.getElementById('login-err').innerHTML = 'Senha incorreta!'; }
+}
+function entrar() {
+  document.getElementById('auth-screen').className = 'hidden';
+  document.getElementById('main-app').className = 'container visible';
+  checkNewMonth(); renderAll();
+}
+function sair() { sessionStorage.removeItem('is_auth'); location.reload(); }
+
+// ====== APP LOGIC ======
+function showPage(p, btn) {
+  var pages = document.getElementsByClassName('page');
+  for(var i=0; i<pages.length; i++) pages[i].className = 'page';
+  var tabs = document.getElementsByClassName('main-tab');
+  for(var i=0; i<tabs.length; i++) tabs[i].className = 'main-tab';
+  
+  var targetPage = document.getElementById('page-' + p);
+  if(targetPage) targetPage.className = 'page active';
+  
+  if(btn && btn.className === 'main-tab') {
+    btn.className = 'main-tab active';
+  }
+  renderAll();
+}
+
+function renderCardsGrid() {
+  var g = document.getElementById('cards-grid');
+  var html = '';
+  for(var i=0; i<cartoes.length; i++) {
+    var c = cartoes[i];
+    html += '<div class="card-chip ' + (selCard === c.id ? 'selected' : '') + '" onclick="selCard=\'' + c.id + '\';renderAll()">' +
+            '<div class="cn">' + c.nome + '</div><div class="cv">' + fmt(c.limite) + '</div></div>';
+  }
+  g.innerHTML = html;
+}
+
+function lancarCartao() {
+  var v = parseFloat(document.getElementById('c-valor').value);
+  var l = document.getElementById('c-local').value;
+  var d = document.getElementById('c-data').value;
+  if (!v || !l || !d) return;
+  lancamentos.push({id: Date.now(), cartaoId: selCard, data: d, valor: v, local: l, tipo: document.getElementById('c-tipo').value, parcelas: parseInt(document.getElementById('c-parcelas').value)});
+  save(); renderAll(); document.getElementById('c-valor').value = '';
+}
+
+function preencherObrig() {
+  var val = document.getElementById('o-lista').value;
+  if(!val) return;
+  var parts = val.split('|');
+  document.getElementById('o-nome').value = parts[0];
+  var hoje = new Date();
+  document.getElementById('o-data').value = hoje.getFullYear() + '-' + String(hoje.getMonth()+1).padStart(2,'0') + '-' + parts[1].padStart(2,'0');
+}
+
+function lancarObrigacao() {
+  var n = document.getElementById('o-nome').value;
+  var v = parseFloat(document.getElementById('o-valor').value);
+  var d = document.getElementById('o-data').value;
+  if (!n || !v || !d) return;
+  obrigacoes.push({id: Date.now(), nome: n, valor: v, data: d, pago: false});
+  save(); renderAll();
+  document.getElementById('o-nome').value = '';
+  document.getElementById('o-valor').value = '';
+  document.getElementById('o-data').value = new Date().toISOString().split('T')[0];
+  document.getElementById('o-lista').value = '';
+}
+
+function togglePago(id) {
+  for(var i=0; i<obrigacoes.length; i++) { if(obrigacoes[i].id === id) obrigacoes[i].pago = !obrigacoes[i].pago; }
+  save(); renderAll();
+}
+
+function del(type, id) {
+  if(type==='c') lancamentos = lancamentos.filter(function(x){return x.id!==id;});
+  else if(type==='o') obrigacoes = obrigacoes.filter(function(x){return x.id!==id;});
+  else if(type==='e') espolio = espolio.filter(function(x){return x.id!==id;});
+  else if(type==='s') estoque = estoque.filter(function(x){return x.id!==id;});
+  save(); renderAll();
+}
+
+function renderAll() {
+  renderCardsGrid();
+  // Extrato
+  var hE = '';
+  for(var i=lancamentos.length-1; i>=0; i--) {
+    var l = lancamentos[i];
+    hE += '<tr><td>'+l.data.split('-').reverse().join('/')+'</td><td>'+l.cartaoId+'</td><td>'+l.local+'</td><td>'+fmt(l.valor)+'</td><td><button class="btn-del" onclick="del(\'c\','+l.id+')">×</button></td></tr>';
+  }
+  document.getElementById('extrato-body').innerHTML = hE;
+
+  // Obrigações
+  var hO = '';
+  for(var i=0; i<obrigacoes.length; i++) {
+    var o = obrigacoes[i];
+    hO += '<tr><td>'+o.data.split('-').reverse().join('/')+'</td><td>'+o.nome+'</td><td>'+fmt(o.valor)+'</td><td><button onclick="togglePago('+o.id+')" class="badge '+(o.pago?'badge-pago':'badge-nao')+'">'+(o.pago?'Pago':'Pendente')+'</button></td><td><button class="btn-del" onclick="del(\'o\','+o.id+')">×</button></td></tr>';
+  }
+  document.getElementById('obrig-body').innerHTML = hO;
+
+  // Resumo
+  var tO = 0, tC = 0, tAb = 0;
+  var hR = '';
+  var now = new Date();
+  var monthKey = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+  
+  for(var i=0; i<obrigacoes.length; i++) {
+    var o = obrigacoes[i];
+    if(o.data.indexOf(monthKey) === 0) {
+      tO += o.valor;
+      if(!o.pago) tAb += o.valor;
+      hR += '<tr><td>'+o.data.split('-').reverse().join('/')+'</td><td>'+o.nome+'</td><td>Obrigação</td><td>'+fmt(o.valor)+'</td><td>'+(o.pago?'Pago':'Pendente')+'</td></tr>';
+    }
+  }
+  for(var i=0; i<lancamentos.length; i++) {
+    var l = lancamentos[i];
+    if(l.data.indexOf(monthKey) === 0) {
+      tC += l.valor;
+      tAb += l.valor;
+      hR += '<tr><td>'+l.data.split('-').reverse().join('/')+'</td><td>'+l.local+'</td><td>'+l.cartaoId+'</td><td>'+fmt(l.valor)+'</td><td>Pendente</td></tr>';
+    }
+  }
+  var disp = rendaMensal - tAb;
+  var pct = rendaMensal > 0 ? Math.round((tAb / rendaMensal) * 100) : 0;
+  document.getElementById('rg-renda').innerHTML = fmt(rendaMensal);
+  document.getElementById('rg-obl').innerHTML = fmt(tO);
+  document.getElementById('rg-cart').innerHTML = fmt(tC);
+  document.getElementById('rg-ab').innerHTML = fmt(tAb);
+  document.getElementById('rg-pct').innerHTML = pct + '%';
+  var dispEl = document.getElementById('rg-disp');
+  dispEl.innerHTML = fmt(disp);
+  dispEl.className = 'stat-value ' + (disp >= 0 ? 'green' : 'red');
+  document.getElementById('rg-body').innerHTML = hR;
+
+  // Espólio
+  var hEsp = ''; 
+  for(var i=0; i<espolio.length; i++) {
+    var e = espolio[i];
+    var dataFmt = e.data ? e.data.split('-').reverse().join('/') : '--/--/----';
+    hEsp += '<tr class="clickable" onclick="editEspolio('+e.id+')"><td>'+dataFmt+'</td><td>'+e.nome+'</td><td>'+fmt(e.valor)+'</td><td><button class="btn-del" onclick="event.stopPropagation();del(\'e\','+e.id+')">×</button></td></tr>';
+  }
+  document.getElementById('esp-body').innerHTML = hEsp;
+
+  var hCfg = ''; 
+  for(var i=0; i<cartoes.length; i++) {
+    hCfg += '<div class="card"><strong>'+cartoes[i].nome+'</strong><div class="grid-2"><div><label>Limite</label><input type="number" value="'+cartoes[i].limite+'" onchange="updateCfg(\''+cartoes[i].id+'\',\'limite\',this.value)" inputmode="decimal"></div><div><label>Vencimento</label><input type="number" value="'+cartoes[i].vencimento+'" onchange="updateCfg(\''+cartoes[i].id+'\',\'vencimento\',this.value)" inputmode="numeric"></div></div></div>';
+  }
+  document.getElementById('config-list').innerHTML = hCfg;
+  document.getElementById('cfg-renda').value = rendaMensal || '';
+}
+
+function salvarRenda() {
+  var v = parseFloat(document.getElementById('cfg-renda').value);
+  if(isNaN(v) || v < 0) { alert('Informe um valor válido!'); return; }
+  rendaMensal = v;
+  save();
+  renderAll();
+  alert('Renda salva com sucesso!');
+}
+
+function updateCfg(id, key, val) {
+  for(var i=0; i<cartoes.length; i++) { if(cartoes[i].id === id) cartoes[i][key] = parseFloat(val); }
+  save(); renderAll();
+}
+
+function addEspolio() {
+  var id = document.getElementById('esp-id').value;
+  var n = document.getElementById('esp-nome').value;
+  var v = parseFloat(document.getElementById('esp-valor').value);
+  var d = document.getElementById('esp-data').value;
+  
+  if(!n || isNaN(v) || !d) { alert('Preencha todos os campos!'); return; }
+
+  if(id) {
+    for(var i=0; i<espolio.length; i++) {
+      if(espolio[i].id == id) {
+        espolio[i].nome = n;
+        espolio[i].valor = v;
+        espolio[i].data = d;
+        break;
+      }
+    }
+  } else {
+    espolio.push({id: Date.now(), nome: n, valor: v, data: d});
+  }
+  
+  save();
+  renderAll();
+    document.getElementById('esp-id').value = '';
+  document.getElementById('esp-nome').value = '';
+  document.getElementById('esp-valor').value = '';
+  document.getElementById('esp-data').value = new Date().toISOString().split('T')[0];
+  document.getElementById('esp-btn').innerHTML = '+ Adicionar caixa';
+}
+
+function editEspolio(id) {
+  var item = espolio.find(function(e) { return e.id == id; });
+  if(item) {
+    document.getElementById('esp-id').value = item.id;
+    document.getElementById('esp-nome').value = item.nome;
+    document.getElementById('esp-valor').value = item.valor;
+    document.getElementById('esp-data').value = item.data || new Date().toISOString().split('T')[0];
+    document.getElementById('esp-btn').innerHTML = '💾 Salvar Alterações';
+    window.scrollTo({top: 0, behavior: 'smooth'});
+  }
+}
+
+window.onload = function() {
+  var hoje = new Date().toISOString().split('T')[0];
+  document.getElementById('c-data').value = hoje;
+  document.getElementById('o-data').value = hoje;
+  document.getElementById('esp-data').value = hoje;
+  initAuth();
+};
+</script>
+</body>
+</html>
